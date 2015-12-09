@@ -258,7 +258,7 @@ private void processExpression(int identifier, node tree) {
 			throw "Not implemented: <n@src>";
 		}
 		case \newObject(Expression expr, Type \type, list[Expression] args): {
-			checkForUse(expr);
+			checkForUse(identifier, expr);
 			
 			for(argument <- args) {
     			checkForUse(identifier, argument);

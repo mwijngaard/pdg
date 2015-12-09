@@ -51,12 +51,15 @@ public ControlDependence createCDG(MethodData methodData, ControlFlow controlFlo
 												
 	for(<from, to> <- inspectionEdges) {
 		// Immediate dominator (idom)
-		int idom = getOneFrom(predecessors(postDominator.tree, from));
-		list[int] pathNodes = shortestPathPair(postDominator.tree, idom, to) - idom;
-		
-		for(pathNode <- pathNodes, pathNode != from) {
-			dependencies[pathNode] += { from };
-			controls[from] += { pathNode };
+		preds = predecessors(postDominator.tree, from);
+		if (!isEmpty(preds)) {
+			int idom = getOneFrom(preds);
+			list[int] pathNodes = shortestPathPair(postDominator.tree, idom, to) - idom;
+			
+			for(pathNode <- pathNodes, pathNode != from) {
+				dependencies[pathNode] += { from };
+				controls[from] += { pathNode };
+			}
 		}
 	}
 	

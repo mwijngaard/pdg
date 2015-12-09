@@ -86,6 +86,10 @@ public GeneratedData createCFG(M3 projectModel, methodNode: Declaration::\method
 		controlFlow = connectControlFlows(parameterFlows + [ process(impl) ]);
 	}
 	
+	if(controlFlow == EmptyCF()) {
+		return EmptyGD();
+	}
+	
 	if(\return != Type::\void()) {
 		controlFlow = addReturnNodes(controlFlow, methodName, methodNode@src);	
 	} else {
@@ -219,13 +223,15 @@ private ControlFlow process(whileNode: \while(condition, body)) {
 	scopeDown();
 	
 	ControlFlow bodyFlow = process(body);
-	bodyFlow.exitNodes += getContinueNodes();
+	if (bodyFlow != EmptyCF()) {
+		bodyFlow.exitNodes += getContinueNodes();
 	
-	whileFlow.graph += bodyFlow.graph;
-	whileFlow.graph += createConnectionEdges(bodyFlow, whileFlow);
-	whileFlow.graph += createConnectionEdges(whileFlow, bodyFlow);
-	
-	whileFlow.exitNodes += getBreakNodes();
+		whileFlow.graph += bodyFlow.graph;
+		whileFlow.graph += createConnectionEdges(bodyFlow, whileFlow);
+		whileFlow.graph += createConnectionEdges(whileFlow, bodyFlow);
+		
+		whileFlow.exitNodes += getBreakNodes();
+	}
 	
 	scopeUp();
 	
@@ -260,30 +266,32 @@ private ControlFlow process(doNode: \do(body, condition)) {
 }
 
 private list[ControlFlow] processCases(list[Statement] statements) {
-	ControlFlow caseFlow = ControlFlow({}, 0, {});
+	list[ControlFlow] caseFlows = [];
 	
-	tuple[node popped, list[node] remainder] popTuple = pop(statements);
-	ControlFlow caseNode = process(popTuple.popped);
-	statements = popTuple.remainder;
-	
-	caseFlow.entryNode = caseNode.entryNode;
-	caseFlow.exitNodes = caseNode.exitNodes;
-	
-	bool isNotCase(Statement treeNode) = !isCase(treeNode) && !isDefaultCase(treeNode);
-	
-	list[Statement] caseBody = [ cast(#Statement, statement) | statement <- takeWhile(statements, isNotCase) ];
-	
-	ControlFlow caseBodyFlow = process(\block(caseBody));
-	statements -= caseBody;
-	
-	if(caseBodyFlow != EmptyCF()) {
-		caseFlow.graph = caseBodyFlow.graph + createConnectionEdges(caseFlow, caseBodyFlow);
-		caseFlow.exitNodes = caseBodyFlow.exitNodes;
-	}
-	
-	list[ControlFlow] caseFlows = [caseFlow];
-	
-	if(size(statements) >= 1) {
+	if (!isEmpty(statements)) {
+		ControlFlow caseFlow = ControlFlow({}, 0, {});
+		
+		tuple[node popped, list[node] remainder] popTuple = pop(statements);
+		ControlFlow caseNode = process(popTuple.popped);
+		statements = popTuple.remainder;
+		
+		caseFlow.entryNode = caseNode.entryNode;
+		caseFlow.exitNodes = caseNode.exitNodes;
+		
+		bool isNotCase(Statement treeNode) = !isCase(treeNode) && !isDefaultCase(treeNode);
+		
+		list[Statement] caseBody = [ cast(#Statement, statement) | statement <- takeWhile(statements, isNotCase) ];
+		
+		ControlFlow caseBodyFlow = process(\block(caseBody));
+		statements -= caseBody;
+		
+		if(caseBodyFlow != EmptyCF()) {
+			caseFlow.graph = caseBodyFlow.graph + createConnectionEdges(caseFlow, caseBodyFlow);
+			caseFlow.exitNodes = caseBodyFlow.exitNodes;
+		}
+		
+		caseFlows += caseFlow;
+		
 		caseFlows += processCases(statements); 
 	}
 	

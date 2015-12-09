@@ -13,11 +13,11 @@ import graph::TransferEnvironment;
 import graph::control::flow::CFConnector;
 
 
-private set[loc] projectMethods;
+private set[loc] projectMethods = {};
 // The set of all the methods that are called by the currently
 // analysed method.
-private set[loc] calledMethods;
-private set[int] callSites;
+private set[loc] calledMethods = {};
+private set[int] callSites = {};
 
 public void initializeCallEnvironment(M3 projectModel) {
 	projectMethods = methods(projectModel);
