@@ -179,14 +179,15 @@ private ControlFlow createForFlow(int identifier, Statement body) {
 	scopeDown();
 	
 	ControlFlow bodyFlow = process(body);
-	bodyFlow.exitNodes += getContinueNodes();
-	
-	forFlow.graph += bodyFlow.graph;
-	forFlow.graph += createConnectionEdges(forFlow, bodyFlow);
-	forFlow.graph += createConnectionEdges(bodyFlow, forFlow);
+	if (bodyFlow != EmptyCF()) {
+		bodyFlow.exitNodes += getContinueNodes();
 		
-	forFlow.exitNodes += getBreakNodes();
-	
+		forFlow.graph += bodyFlow.graph;
+		forFlow.graph += createConnectionEdges(forFlow, bodyFlow);
+		forFlow.graph += createConnectionEdges(bodyFlow, forFlow);
+			
+		forFlow.exitNodes += getBreakNodes();
+	}
 	scopeUp();
 	
 	return forFlow;
